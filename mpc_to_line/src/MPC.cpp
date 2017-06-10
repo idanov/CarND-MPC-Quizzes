@@ -57,8 +57,27 @@ class FG_eval {
     fg[0] = 0;
 
     // Reference State Cost
-    // TODO: Define the cost related the reference state and
+    // DONE: Define the cost related the reference state and
     // any anything you think may be beneficial.
+
+    // Minimise cte, epsi and keep v to ref_v
+    for (int t = 0; t < N; t++) {
+      fg[0] += CppAD::pow(vars[cte_start + t], 2);
+      fg[0] += CppAD::pow(vars[epsi_start + t], 2);
+      fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
+    }
+
+    // Minimise the use of actuators
+    for (int t = 0; t < N - 1; t++) {
+      fg[0] += CppAD::pow(vars[delta_start + t], 2);
+      fg[0] += CppAD::pow(vars[a_start + t], 2);
+    }
+
+    // Ensure smooth actuators.
+    for (int t = 0; t < N - 2; t++) {
+      fg[0] += CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+      fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+    }
 
     //
     // Setup Constraints
@@ -106,7 +125,7 @@ class FG_eval {
       // This is also CppAD can compute derivatives and pass
       // these to the solver.
 
-      AD<double> f0 = polyeval(coeffs, x0);
+      AD<double> f0 = coeffs[0] + coeffs[1] * x0;
       AD<double> psides0 = CppAD::atan(coeffs[1]);
 
       // DONE: Setup the rest of the model constraints
